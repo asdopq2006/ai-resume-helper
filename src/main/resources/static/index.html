@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>AI 简历分析助手</title>
+  <style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    textarea {
+        width: 100%;
+        height: 200px;
+        padding: 10px;
+        font-size: 14px;
+        font-family: monospace;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    .result {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-left: 4px solid #4CAF50;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    .error {
+        border-left-color: #f44336;
+        background-color: #ffefef;
+    }
+    label {
+        font-weight: bold;
+    }
+    .file-upload {
+        margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+<h1>📄 AI 简历分析助手</h1>
+<p>粘贴简历文本或上传文件（.txt, .pdf, .docx），AI 将自动提取技能列表和工作年限。</p>
+
+<div class="file-upload">
+  <label>📁 上传文件（可选）：</label><br>
+  <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
+  <button id="uploadBtn">上传并分析</button>
+</div>
+
+<hr>
+
+<div>
+  <label>✍️ 或直接粘贴简历文本：</label><br>
+  <textarea id="resumeText" placeholder="例如：精通 Java、Spring Boot，有5年后端开发经验..."></textarea>
+  <button id="analyzeBtn">分析文本</button>
+</div>
+
+<div id="result" class="result" style="display:none;"></div>
+
+<script>
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const resumeText = document.getElementById('resumeText');
+  const resultDiv = document.getElementById('result');
+
+  function showResult(data, isError = false) {
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = '';
+      if (isError) {
+          resultDiv.classList.add('error');
+          resultDiv.innerHTML = `<strong>❌ 错误：</strong> ${data.error || data}`;
+      } else {
+          resultDiv.classList.remove('error');
+          let html = `<strong>✅ 分析结果：</strong><br>`;
+          if (data.skills) html += `<strong>技能：</strong> ${data.skills.join(', ')}<br>`;
+          if (data.yearsOfExperience !== undefined) html += `<strong>工作年限：</strong> ${data.yearsOfExperience} 年<br>`;
+          if (data.error) html += `<strong>注意：</strong> ${data.error}`;
+          resultDiv.innerHTML = html;
+      }
+  }
+
+  // 分析文本接口
+  analyzeBtn.addEventListener('click', async () => {
+      const text = resumeText.value.trim();
+      if (!text) {
+          showResult({ error: '请填写简历文本' }, true);
+          return;
+      }
+      try {
+          const response = await fetch('/ai/analyze-resume', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(text)
+          });
+          const data = await response.json();
+          if (response.ok) {
+              showResult(data);
+          } else {
+              showResult({ error: data.error || '服务器错误' }, true);
+          }
+      } catch (err) {
+          showResult({ error: '网络错误：' + err.message }, true);
+      }
+  });
+
+  // 上传文件接口
+  uploadBtn.addEventListener('click', async () => {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      if (!file) {
+          showResult({ error: '请先选择文件' }, true);
+          return;
+      }
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+          const response = await fetch('/ai/analyze-resume-file', {
+              method: 'POST',
+              body: formData
+          });
+          const data = await response.json();
+          if (response.ok) {
+              showResult(data);
+          } else {
+              showResult({ error: data.error || '服务器错误' }, true);
+          }
+      } catch (err) {
+          showResult({ error: '网络错误：' + err.message }, true);
+      }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+POST https://api.siliconflow.cn/v1/chat/completions
+Authorization: Bearer sk-jyohlrcqrsytmtkwlobifeqrdxdismslvdwszhahubhimqil
+Content-Type: application/json
+
+{
+  "model": "deepseek-ai/DeepSeek-R1",
+  "messages": [
+    {
+      "role": "user",
+      "content": "你好，请自我介绍一下"
+    }
+  ]
+}

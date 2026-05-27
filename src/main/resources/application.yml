@@ -1,0 +1,12 @@
+spring:
+  ai:
+    openai:
+      api-key: sk-jyohlrcqrsytmtkwlobifeqrdxdismslvdwszhahubhimqil
+      base-url: https://api.siliconflow.cn
+      chat:
+        options:
+          model: deepseek-ai/DeepSeek-R1  # 或其他硅基支持的模型
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
