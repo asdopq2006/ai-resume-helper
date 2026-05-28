@@ -72,6 +72,9 @@
 </div>
 
 <div id="result" class="result" style="display:none;"></div>
+<hr>
+<h3>📜 历史分析记录</h3>
+<div id="historyContainer" style="max-height: 400px; overflow-y: auto;"></div>
 
 <script>
   const analyzeBtn = document.getElementById('analyzeBtn');
@@ -92,6 +95,46 @@
           if (data.yearsOfExperience !== undefined) html += `<strong>工作年限：</strong> ${data.yearsOfExperience} 年<br>`;
           if (data.error) html += `<strong>注意：</strong> ${data.error}`;
           resultDiv.innerHTML = html;
+      }
+  }
+
+  // 加载历史记录
+  async function loadHistory() {
+      try {
+          const response = await fetch('/ai/history');
+          const data = await response.json();
+          const container = document.getElementById('historyContainer');
+          container.innerHTML = '';
+          if (!data || data.length === 0) {
+              container.innerHTML = '<p>暂无历史记录</p>';
+              return;
+          }
+          data.forEach(item => {
+              const card = document.createElement('div');
+              card.className = 'history-card';
+              card.innerHTML = `
+                  <div><strong>时间：</strong> ${item.createTime}</div>
+                  <div><strong>技能：</strong> ${item.skills || '无'}</div>
+                  <div><strong>年限：</strong> ${item.yearsOfExperience ?? '无'}</div>
+                  <div><strong>学历：</strong> ${item.education || '无'}</div>
+                  <div><strong>期望职位：</strong> ${item.expectedPosition || '无'}</div>
+                  <div><strong>简历原文：</strong> ${item.resumeText?.substring(0, 80) || ''}${item.resumeText?.length > 80 ? '…' : ''}</div>
+                  <button onclick="deleteHistory(${item.id})">删除</button>
+              `;
+              container.appendChild(card);
+          });
+      } catch (err) {
+          console.error('加载历史记录失败:', err);
+      }
+  }
+
+  // 删除单条记录
+  async function deleteHistory(id) {
+      try {
+          await fetch(`/ai/history/${id}`, { method: 'DELETE' });
+          loadHistory();
+      } catch (err) {
+          console.error('删除失败:', err);
       }
   }
 
@@ -143,6 +186,10 @@
       } catch (err) {
           showResult({ error: '网络错误：' + err.message }, true);
       }
+  });
+   // 页面加载时获取历史记录
+  window.addEventListener('DOMContentLoaded', () => {
+      loadHistory();
   });
 </script>
 </body>
