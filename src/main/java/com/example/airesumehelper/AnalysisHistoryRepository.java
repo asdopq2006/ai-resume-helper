@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface AnalysisHistoryRepository extends JpaRepository<AnalysisHistory, Long> {
     List<AnalysisHistory> findAllByOrderByCreateTimeDesc();
+
 }
