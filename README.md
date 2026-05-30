@@ -19,6 +19,7 @@
 ## 部署
 - Railway 在线地址：[https://ai-resume-helper.up.railway.app](https://ai-resume-helper.up.railway.app)
 
+
 ## 本地运行
 1. 克隆仓库
 2. 配置 `application.yml` 中的 `SILICONFLOW_API_KEY`
