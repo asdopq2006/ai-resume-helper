@@ -90,7 +90,6 @@ public class AiController {
         // 创建 Excel 工作簿
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("简历分析结果");
-
         // 创建标题行
         Row header = sheet.createRow(0);
         String[] columns = {"文件名", "技能", "工作年限", "学历", "期望职位", "简历原文"};
