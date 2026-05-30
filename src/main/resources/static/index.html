@@ -1,196 +1,258 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>AI 简历分析助手</title>
-  <style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        max-width: 800px;
-        margin: 40px auto;
-        padding: 20px;
-    }
-    textarea {
-        width: 100%;
-        height: 200px;
-        padding: 10px;
-        font-size: 14px;
-        font-family: monospace;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-    button {
-        background-color: #4CAF50;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-        margin-top: 10px;
-    }
-    button:hover {
-        background-color: #45a049;
-    }
-    .result {
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #f9f9f9;
-        border-left: 4px solid #4CAF50;
-        border-radius: 4px;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    }
-    .error {
-        border-left-color: #f44336;
-        background-color: #ffefef;
-    }
-    label {
-        font-weight: bold;
-    }
-    .file-upload {
-        margin: 20px 0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>AI 简历分析助手</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+        .result {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .history-card {
+            border: 1px solid #dee2e6;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            background-color: #fff;
+            transition: box-shadow 0.2s;
+        }
+        .history-card:hover {
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+        }
+        .loading-spinner {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .file-upload label {
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
-<h1>📄 AI 简历分析助手</h1>
-<p>粘贴简历文本或上传文件（.txt, .pdf, .docx），AI 将自动提取技能列表和工作年限。</p>
 
-<div class="file-upload">
-  <label>📁 上传文件（可选）：</label><br>
-  <input type="file" id="fileInput" accept=".txt,.pdf,.docx">
-  <button id="uploadBtn">上传并分析</button>
+<div class="container">
+    <h1 class="mb-3">📄 AI 简历分析助手</h1>
+    <p class="text-muted">粘贴简历文本或上传文件（.txt, .pdf, .docx），AI 将自动提取技能列表、工作年限、学历及期望职位。</p>
+
+    <!-- 上传文件区域 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">📁 批量上传文件</h5>
+            <div class="mb-3">
+                <input type="file" class="form-control" id="fileInput" accept=".txt,.pdf,.docx" multiple>
+            </div>
+            <button id="uploadBtn" class="btn btn-primary">上传并分析</button>
+        </div>
+    </div>
+
+    <!-- 文本分析区域 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">✍️ 直接粘贴简历文本</h5>
+            <textarea class="form-control" id="resumeText" rows="6" placeholder="例如：精通 Java、Spring Boot，有5年后端开发经验..."></textarea>
+            <button id="analyzeBtn" class="btn btn-success mt-3">分析文本</button>
+        </div>
+    </div>
+
+    <!-- 结果显示区 -->
+    <div id="result" class="result" style="display:none;"></div>
+
+    <!-- 历史记录 -->
+    <hr>
+    <h3>📜 历史分析记录</h3>
+    <div id="historyContainer" style="max-height: 500px; overflow-y: auto;"></div>
 </div>
 
-<hr>
-
-<div>
-  <label>✍️ 或直接粘贴简历文本：</label><br>
-  <textarea id="resumeText" placeholder="例如：精通 Java、Spring Boot，有5年后端开发经验..."></textarea>
-  <button id="analyzeBtn">分析文本</button>
+<!-- 加载动画遮罩 -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <div class="mt-2">AI 分析中，请稍候...</div>
+    </div>
 </div>
 
-<div id="result" class="result" style="display:none;"></div>
-<hr>
-<h3>📜 历史分析记录</h3>
-<div id="historyContainer" style="max-height: 400px; overflow-y: auto;"></div>
-
+<script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 <script>
-  const analyzeBtn = document.getElementById('analyzeBtn');
-  const uploadBtn = document.getElementById('uploadBtn');
-  const resumeText = document.getElementById('resumeText');
-  const resultDiv = document.getElementById('result');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const resumeText = document.getElementById('resumeText');
+    const resultDiv = document.getElementById('result');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
-  function showResult(data, isError = false) {
-      resultDiv.style.display = 'block';
-      resultDiv.innerHTML = '';
-      if (isError) {
-          resultDiv.classList.add('error');
-          resultDiv.innerHTML = `<strong>❌ 错误：</strong> ${data.error || data}`;
-      } else {
-          resultDiv.classList.remove('error');
-          let html = `<strong>✅ 分析结果：</strong><br>`;
-          if (data.skills) html += `<strong>技能：</strong> ${data.skills.join(', ')}<br>`;
-          if (data.yearsOfExperience !== undefined) html += `<strong>工作年限：</strong> ${data.yearsOfExperience} 年<br>`;
-          if (data.error) html += `<strong>注意：</strong> ${data.error}`;
-          resultDiv.innerHTML = html;
-      }
-  }
+    function showLoading() {
+        loadingOverlay.style.visibility = 'visible';
+    }
+    function hideLoading() {
+        loadingOverlay.style.visibility = 'hidden';
+    }
 
-  // 加载历史记录
-  async function loadHistory() {
-      try {
-          const response = await fetch('/ai/history');
-          const data = await response.json();
-          const container = document.getElementById('historyContainer');
-          container.innerHTML = '';
-          if (!data || data.length === 0) {
-              container.innerHTML = '<p>暂无历史记录</p>';
-              return;
-          }
-          data.forEach(item => {
-              const card = document.createElement('div');
-              card.className = 'history-card';
-              card.innerHTML = `
-                  <div><strong>时间：</strong> ${item.createTime}</div>
-                  <div><strong>技能：</strong> ${item.skills || '无'}</div>
-                  <div><strong>年限：</strong> ${item.yearsOfExperience ?? '无'}</div>
-                  <div><strong>学历：</strong> ${item.education || '无'}</div>
-                  <div><strong>期望职位：</strong> ${item.expectedPosition || '无'}</div>
-                  <div><strong>简历原文：</strong> ${item.resumeText?.substring(0, 80) || ''}${item.resumeText?.length > 80 ? '…' : ''}</div>
-                  <button onclick="deleteHistory(${item.id})">删除</button>
-              `;
-              container.appendChild(card);
-          });
-      } catch (err) {
-          console.error('加载历史记录失败:', err);
-      }
-  }
+    function showResult(data, isError = false) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '';
+        if (isError) {
+            resultDiv.classList.add('error');
+            resultDiv.innerHTML = `<strong>❌ 错误：</strong> ${data.error || data}`;
+        } else {
+            resultDiv.classList.remove('error');
+            let html = `<strong>✅ 分析结果：</strong><br>`;
+            if (data.skills) html += `<strong>技能：</strong> ${data.skills.join(', ')}<br>`;
+            if (data.yearsOfExperience !== undefined) html += `<strong>工作年限：</strong> ${data.yearsOfExperience} 年<br>`;
+            if (data.education) html += `<strong>学历：</strong> ${data.education}<br>`;
+            if (data.expectedPosition) html += `<strong>期望职位：</strong> ${data.expectedPosition}<br>`;
+            if (data.error) html += `<strong>注意：</strong> ${data.error}`;
+            resultDiv.innerHTML = html;
+        }
+    }
 
-  // 删除单条记录
-  async function deleteHistory(id) {
-      try {
-          await fetch(`/ai/history/${id}`, { method: 'DELETE' });
-          loadHistory();
-      } catch (err) {
-          console.error('删除失败:', err);
-      }
-  }
+    // 加载历史记录
+    async function loadHistory() {
+        try {
+            const response = await fetch('/ai/history');
+            const data = await response.json();
+            const container = document.getElementById('historyContainer');
+            container.innerHTML = '';
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-muted">暂无历史记录</p>';
+                return;
+            }
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'history-card';
+                card.innerHTML = `
+                    <div><strong>时间：</strong> ${item.createTime}</div>
+                    <div><strong>技能：</strong> ${item.skills || '无'}</div>
+                    <div><strong>年限：</strong> ${item.yearsOfExperience ?? '无'}</div>
+                    <div><strong>学历：</strong> ${item.education || '无'}</div>
+                    <div><strong>期望职位：</strong> ${item.expectedPosition || '无'}</div>
+                    <div><strong>简历原文：</strong> ${item.resumeText?.substring(0, 80) || ''}${item.resumeText?.length > 80 ? '…' : ''}</div>
+                    <button class="btn btn-danger btn-sm mt-2" onclick="deleteHistory(${item.id})">删除</button>
+                `;
+                container.appendChild(card);
+            });
+        } catch (err) {
+            console.error('加载历史记录失败:', err);
+        }
+    }
 
-  // 分析文本接口
-  analyzeBtn.addEventListener('click', async () => {
-      const text = resumeText.value.trim();
-      if (!text) {
-          showResult({ error: '请填写简历文本' }, true);
-          return;
-      }
-      try {
-          const response = await fetch('/ai/analyze-resume', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(text)
-          });
-          const data = await response.json();
-          if (response.ok) {
-              showResult(data);
-          } else {
-              showResult({ error: data.error || '服务器错误' }, true);
-          }
-      } catch (err) {
-          showResult({ error: '网络错误：' + err.message }, true);
-      }
-  });
+    // 删除单条记录
+    async function deleteHistory(id) {
+        try {
+            await fetch(`/ai/history/${id}`, { method: 'DELETE' });
+            loadHistory();
+        } catch (err) {
+            console.error('删除失败:', err);
+        }
+    }
 
-  // 上传文件接口
-  uploadBtn.addEventListener('click', async () => {
-      const fileInput = document.getElementById('fileInput');
-      const file = fileInput.files[0];
-      if (!file) {
-          showResult({ error: '请先选择文件' }, true);
-          return;
-      }
-      const formData = new FormData();
-      formData.append('file', file);
-      try {
-          const response = await fetch('/ai/analyze-resume-file', {
-              method: 'POST',
-              body: formData
-          });
-          const data = await response.json();
-          if (response.ok) {
-              showResult(data);
-          } else {
-              showResult({ error: data.error || '服务器错误' }, true);
-          }
-      } catch (err) {
-          showResult({ error: '网络错误：' + err.message }, true);
-      }
-  });
-   // 页面加载时获取历史记录
-  window.addEventListener('DOMContentLoaded', () => {
-      loadHistory();
-  });
+    // 分析文本接口
+    analyzeBtn.addEventListener('click', async () => {
+        const text = resumeText.value.trim();
+        if (!text) {
+            showResult({ error: '请填写简历文本' }, true);
+            return;
+        }
+        showLoading();
+        try {
+            const response = await fetch('/ai/analyze-resume', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(text)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                showResult(data);
+                loadHistory();   // 添加这一行，立即刷新历史记录
+            } else {
+                showResult({ error: data.error || '服务器错误' }, true);
+            }
+        } catch (err) {
+            showResult({ error: '网络错误：' + err.message }, true);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    // 批量上传接口（下载 Excel）
+    uploadBtn.addEventListener('click', async () => {
+        const files = document.getElementById('fileInput').files;
+        if (!files.length) {
+            showResult({ error: '请先选择文件' }, true);
+            return;
+        }
+        showLoading();
+        const formData = new FormData();
+        for (let file of files) {
+            formData.append('files', file);
+        }
+        try {
+            const response = await fetch('/ai/analyze-resume-batch', {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'resume_analysis.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                alert('批量分析完成，已下载 Excel 文件');
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<strong>✅ 批量分析完成，已下载 Excel 文件</strong>';
+                resultDiv.classList.remove('error');
+                // 刷新历史记录（可选，因为批量分析也可以保存历史）
+                loadHistory();
+            } else {
+                const data = await response.json();
+                showResult({ error: data.error || '批量处理失败' }, true);
+            }
+        } catch (err) {
+            showResult({ error: '网络错误：' + err.message }, true);
+        } finally {
+            hideLoading();
+        }
+    });
+
+    // 页面加载时获取历史记录
+    window.addEventListener('DOMContentLoaded', () => {
+        loadHistory();
+    });
 </script>
 </body>
 </html>
